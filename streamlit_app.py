@@ -137,12 +137,26 @@ body {
 }
 
 /* Hide Streamlit default elements and navigation buttons */
+.stElementContainer, .stMarkdown {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Hide all Streamlit elements */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
 .stApp > header {
     display: none !important;
 }
 
 /* Hide navigation buttons completely */
-.stApp > div:first-child {
+.element-container:has(button) {
+    display: none !important;
+}
+
+div[data-testid="column"] {
     display: none !important;
 }
 
@@ -324,10 +338,15 @@ body {
 .app-footer {
     background: #1a1a1a;
     color: #e0e0e0;
+    position: relative;
+    bottom: 0;
+    left: 0;
     width: 100%;
     padding: 30px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin-top: 40px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .footer-content {
@@ -568,6 +587,11 @@ html {
     background: #333;
 }
 </style>
+
+<script>
+/* Navbar scroll effect - removed since we want solid black */
+/* Removed scroll effect to keep navbar consistently black */
+</script>
 """, unsafe_allow_html=True)
 
 # ---------------------------
@@ -575,7 +599,6 @@ html {
 # ---------------------------
 def set_page(page_name):
     st.session_state['current_page'] = page_name
-    st.query_params['page'] = page_name
     st.rerun()
 
 # ---------------------------
@@ -592,9 +615,9 @@ st.markdown(f"""
     </div>
   </div>
   <div class="nav-links">
-    <button class="nav-link {'active' if current_page == 'Home' else ''}" onclick="window.parent.postMessage({{'type': 'streamlit:setQueryParams', 'queryParams': {{'page': 'Home'}}}}, '*')">🏠 Home</button>
-    <button class="nav-link {'active' if current_page == 'Account' else ''}" onclick="window.parent.postMessage({{'type': 'streamlit:setQueryParams', 'queryParams': {{'page': 'Account'}}}}, '*')">🔐 Account</button>
-    <button class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" onclick="window.parent.postMessage({{'type': 'streamlit:setQueryParams', 'queryParams': {{'page': 'Upload'}}}}, '*')">📁 Upload & Analyze</button>
+    <button class="nav-link {'active' if current_page == 'Home' else ''}" onclick="window.location.href='?page=Home'">🏠 Home</button>
+    <button class="nav-link {'active' if current_page == 'Account' else ''}" onclick="window.location.href='?page=Account'">🔐 Account</button>
+    <button class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" onclick="window.location.href='?page=Upload'">📁 Upload & Analyze</button>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -671,7 +694,7 @@ def call_gemini(prompt, system_prompt="You are an AI HR analyst generating conci
 # ---------------------------
 # Main Content Container
 # ---------------------------
-st.markdown('<div class="main-container">', unsafe_allow_html=True)
+#st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
 # ---------------------------
 # PAGE: HOME
