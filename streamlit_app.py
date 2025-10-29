@@ -129,6 +129,19 @@ body {
     padding: 0 !important;
 }
 
+/* Hide Streamlit header and footer */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+footer {
+    display: none !important;
+}
+
+.stApp {
+    margin-top: 0 !important;
+}
+
 div[data-testid="column"] > div > div > div > button {
     display: none !important;
 }
