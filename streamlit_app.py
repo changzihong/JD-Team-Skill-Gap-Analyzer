@@ -7,7 +7,6 @@ import numpy as np
 import requests
 from io import StringIO
 from PyPDF2 import PdfReader
-from streamlit_community_navigation_bar import st_navbar
 
 # -----------------------------------------------------------------------------
 # PAGE CONFIG
@@ -15,26 +14,58 @@ from streamlit_community_navigation_bar import st_navbar
 st.set_page_config(page_title="AI Skills Radar", layout="wide")
 
 # -----------------------------------------------------------------------------
-# LOAD API KEY SAFELY
+# CUSTOM CSS + JS
 # -----------------------------------------------------------------------------
-# Read API key from Streamlit secrets or environment variable
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+st.markdown("""
+    <style>
+    /* Main theme */
+    body {
+        background-color: #f9f9ff;
+        color: #333;
+        font-family: 'Poppins', sans-serif;
+    }
+    .navbar {
+        background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+        padding: 0.8rem 2rem;
+        border-radius: 0 0 12px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+    }
+    .navbar a {
+        color: white;
+        text-decoration: none;
+        margin: 0 1rem;
+        font-weight: 500;
+    }
+    .navbar a:hover {
+        text-decoration: underline;
+    }
+    .footer {
+        background-color: #f1f1f1;
+        padding: 1rem;
+        text-align: center;
+        color: #555;
+        margin-top: 3rem;
+        border-top: 1px solid #ddd;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Use correct model and endpoint
+# -----------------------------------------------------------------------------
+# GEMINI SETUP
+# -----------------------------------------------------------------------------
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 MODEL_NAME = "gemini-2.0-flash"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
 if not GEMINI_API_KEY:
-    st.error("⚠️ Gemini API key not configured. Please set GEMINI_API_KEY in Streamlit secrets or env variables.")
+    st.error("⚠️ Gemini API key not configured. Please add to Streamlit secrets.")
     st.stop()
 
 # -----------------------------------------------------------------------------
-# NAVIGATION BAR
-# -----------------------------------------------------------------------------
-page = st_navbar(["Home", "Upload & Profiles", "Dashboard", "Training Suggestions", "About"], selected="Home")
-
-# -----------------------------------------------------------------------------
-# COMMON SKILLS DATABASE
+# HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
 COMMON_SKILLS = [
     'python','sql','excel','data analysis','communication','project management',
@@ -42,9 +73,6 @@ COMMON_SKILLS = [
     'java','c#','sales','negotiation','recruiting','interviewing','coaching','training'
 ]
 
-# -----------------------------------------------------------------------------
-# HELPER FUNCTIONS
-# -----------------------------------------------------------------------------
 def extract_skills_from_text(text, skill_list=COMMON_SKILLS):
     text_lower = text.lower()
     found = set()
@@ -55,7 +83,6 @@ def extract_skills_from_text(text, skill_list=COMMON_SKILLS):
         tokens = re.findall(r"[a-zA-Z]{4,}", text_lower)
         found = set(tokens[:8])
     return sorted(found)
-
 
 def aggregate_team_skills(df_profiles):
     counts = {}
@@ -70,7 +97,6 @@ def aggregate_team_skills(df_profiles):
                 counts[s] = counts.get(s, 0) + 1
     return counts
 
-
 def compute_skill_match(jd_skills, team_skill_counts):
     jd_set = set(jd_skills)
     team_set = set(team_skill_counts.keys())
@@ -79,7 +105,6 @@ def compute_skill_match(jd_skills, team_skill_counts):
     score = int(100 * len(matched) / max(1, len(jd_set)))
     missing_detail = [{'skill': s, 'team_count': team_skill_counts.get(s, 0)} for s in sorted(missing)]
     return score, sorted(matched), missing_detail
-
 
 def radar_chart(skills, values, title='Team Skills Radar'):
     labels = skills
@@ -96,7 +121,6 @@ def radar_chart(skills, values, title='Team Skills Radar'):
     ax.set_ylim(0,100)
     ax.set_title(title)
     return fig
-
 
 def call_gemini_api(prompt, max_output_tokens=512, temperature=0.2):
     headers = {
@@ -116,70 +140,92 @@ def call_gemini_api(prompt, max_output_tokens=512, temperature=0.2):
         st.write("Raw:", resp.text)
         return ""
 
-
-def suggest_training_for_skills(skills):
-    suggestions = []
-    for s in skills:
-        suggestions.append({
-            'Skill': s,
-            'Recommended Course': f'Advanced {s.title()} Masterclass',
-            'Internal Mentor': f'Senior {s.title()} Specialist'
-        })
-    return suggestions
+# -----------------------------------------------------------------------------
+# NAVIGATION BAR
+# -----------------------------------------------------------------------------
+st.markdown("""
+<div class="navbar">
+  <div style="font-weight:600;font-size:18px;">🤖 AI Skills Radar</div>
+  <div>
+    <a href="?page=home">Home</a>
+    <a href="?page=dashboard">Dashboard</a>
+    <a href="?page=upload">Upload</a>
+    <a href="?page=login">Login</a>
+    <a href="?page=signup">Signup</a>
+    <a href="?page=about">About</a>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # PAGE LOGIC
 # -----------------------------------------------------------------------------
-if page == "Home":
-    st.title("AI Skills Radar")
-    st.write("Analyze your team's skills vs. job requirements with intelligent insights powered by Gemini.")
+query_params = st.query_params
+page = query_params.get("page", ["home"])[0]
 
-elif page == "Upload & Profiles":
-    st.header("Upload Job Description & Team Profiles")
+if page == "home":
+    st.title("Welcome to AI Skills Radar")
+    st.write("Your one-stop AI solution to analyze team readiness and close skill gaps for future growth.")
 
-    jd_file = st.file_uploader('Upload Job Description (TXT or PDF)', type=['txt','pdf'])
+elif page == "login":
+    st.header("🔐 Login")
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Login")
+        if submitted:
+            if username == "admin" and password == "1234":
+                st.success("Welcome back, Admin!")
+            else:
+                st.error("Invalid credentials")
+
+elif page == "signup":
+    st.header("🆕 Signup")
+    with st.form("signup_form"):
+        username = st.text_input("Choose a username")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        confirm = st.text_input("Confirm Password", type="password")
+        submitted = st.form_submit_button("Create Account")
+        if submitted:
+            if password == confirm:
+                st.success(f"Account created for {username}! You can now login.")
+            else:
+                st.error("Passwords do not match.")
+
+elif page == "upload":
+    st.header("📁 Upload Job Description & Team Profiles")
+    jd_file = st.file_uploader('Upload JD (TXT/PDF)', type=['txt','pdf'])
     jd_text = st.text_area('Or paste JD text here', height=160)
-
     team_file = st.file_uploader('Upload Team Profiles (CSV/Excel)', type=['csv','xlsx','xls'])
 
-    if st.button("Proceed to Dashboard"):
+    if st.button("Analyze Skills"):
         if jd_file is not None:
             if jd_file.type == 'text/plain':
                 jd_text = jd_file.getvalue().decode('utf-8')
             elif jd_file.type == 'application/pdf':
                 reader = PdfReader(jd_file)
                 jd_text = "\n".join([page.extract_text() for page in reader.pages])
-            else:
-                st.warning("Unsupported file type.")
-
         if team_file is not None:
-            try:
-                if team_file.name.endswith('.csv'):
-                    team_df = pd.read_csv(team_file)
-                else:
-                    team_df = pd.read_excel(team_file)
-                st.session_state['team_df'] = team_df
-                st.session_state['jd_text'] = jd_text
-                st.success("Uploaded successfully! Go to Dashboard.")
-            except Exception as e:
-                st.error("Failed to load team file: " + str(e))
+            team_df = pd.read_csv(team_file) if team_file.name.endswith('.csv') else pd.read_excel(team_file)
+            st.session_state['team_df'] = team_df
+            st.session_state['jd_text'] = jd_text
+            st.success("✅ Uploaded successfully! Go to Dashboard.")
 
-elif page == "Dashboard":
-    st.header("📊 AI-Generated Skill Gap Insights")
-
+elif page == "dashboard":
+    st.header("📊 Skill Gap Dashboard")
     jd_text = st.session_state.get('jd_text')
     team_df = st.session_state.get('team_df')
 
     if not jd_text or team_df is None:
-        st.warning("Please upload Job Description and team profiles first.")
+        st.warning("Please upload data first from the Upload page.")
     else:
         jd_skills = extract_skills_from_text(jd_text)
         team_skill_counts = aggregate_team_skills(team_df)
         score, matched, missing_detail = compute_skill_match(jd_skills, team_skill_counts)
-
-        st.metric(label='Match Score', value=f'{score}%')
-        st.write("**Matched Skills:**", ", ".join(matched))
-        st.write("**Missing Skills:**", [m['skill'] for m in missing_detail])
+        st.metric("Skill Match Score", f"{score}%")
+        st.write("Matched Skills:", matched)
+        st.write("Missing Skills:", [m['skill'] for m in missing_detail])
 
         viz_skills = list(jd_skills)[:8]
         team_size = max(1, sum(team_skill_counts.values()))
@@ -187,24 +233,24 @@ elif page == "Dashboard":
         fig = radar_chart(viz_skills, viz_values)
         st.pyplot(fig)
 
-        prompt = f"Analyze these missing skills: {missing_detail} and suggest overall development strategy."
-        ai_feedback = call_gemini_api(prompt)
-        if ai_feedback:
+        prompt = f"Analyze missing skills: {missing_detail}. Suggest team development plan."
+        insights = call_gemini_api(prompt)
+        if insights:
             st.subheader("Gemini Insights")
-            st.write(ai_feedback)
+            st.write(insights)
 
-        st.session_state['missing_detail'] = missing_detail
+elif page == "about":
+    st.header("About This Application")
+    st.write("""
+        AI Skills Radar is an intelligent workforce analyzer that helps HR, L&D, and management teams 
+        identify skill gaps, plan training, and prepare for future business goals.
+    """)
 
-elif page == "Training Suggestions":
-    st.header("🎯 Suggested Trainings & Mentorship")
-    missing_detail = st.session_state.get('missing_detail', [])
-
-    if not missing_detail:
-        st.info("Please go to Dashboard first to identify missing skills.")
-    else:
-        df_suggestions = pd.DataFrame(suggest_training_for_skills([m['skill'] for m in missing_detail]))
-        st.dataframe(df_suggestions, use_container_width=True)
-
-elif page == "About":
-    st.header("About")
-    st.write("AI Skills Radar helps HR and team leads identify skill gaps and plan targeted upskilling paths.")
+# -----------------------------------------------------------------------------
+# FOOTER
+# -----------------------------------------------------------------------------
+st.markdown("""
+<div class="footer">
+    © 2025 AI Skills Radar | Designed by HR Tech Builders | Contact: support@aiskillsradar.com
+</div>
+""", unsafe_allow_html=True)
