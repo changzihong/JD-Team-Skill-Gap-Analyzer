@@ -3,31 +3,36 @@ import os
 import streamlit as st
 import pandas as pd
 import re
-import json
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
 from io import StringIO
 
+# Install via: pip install streamlit-community-navigation-bar
+from streamlit_community_navigation_bar import st_navbar
+
 st.set_page_config(page_title="AI Skills Radar", layout="wide")
 
-# Install and import nav bar component
-from streamlit_navigation_bar import st_navbar
-
-# Backend: read API key from environment or secrets (not from UI)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # set this in your deployment environment
+# ----------------------
+# Backend: read API key from environment or secrets
+# ----------------------
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # hide key in backend
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 if not GEMINI_API_KEY:
     st.error("⚠️ API key not configured. Set GEMINI_API_KEY as env variable.")
 
+# ----------------------
 # Navigation bar
+# ----------------------
 page = st_navbar(
     ["Home", "Upload & Profiles", "Dashboard", "Training Suggestions", "About"],
     selected="Home"
 )
 
-# Common helper functions (skill extraction, matching, chart, etc.)
+# ----------------------
+# Helper functions
+# ----------------------
 COMMON_SKILLS = [
     'python','sql','excel','data analysis','communication','project management',
     'leadership','product management','machine learning','nlp','aws','gcp','react',
@@ -99,17 +104,29 @@ def call_llm(prompt, max_tokens=512, temperature=0.0):
     data = resp.json()
     return data["candidates"][0]["content"]
 
+def suggest_training_for_skills(skills):
+    suggestions = []
+    for s in skills:
+        suggestions.append({
+            'skill': s,
+            'recommended_course': f'Intro to {s.title()} (external course)',
+            'internal_mentor': f'Senior {s.title()} Specialist'
+        })
+    return suggestions
+
+# ----------------------
 # Page logic
+# ----------------------
 if page == "Home":
     st.title("Welcome to AI Skills Radar")
     st.write("Use the navigation bar above to move between pages.")
+
 elif page == "Upload & Profiles":
     st.header("Upload Job Description & Team Profiles")
     jd_file = st.file_uploader('Upload Job Description (txt or pdf)', type=['txt','pdf'])
     jd_text = st.text_area('Or paste JD text here', height=160)
     team_file = st.file_uploader('Upload Team Profiles (CSV/Excel)', type=['csv','xlsx','xls'])
     if st.button("Proceed to Dashboard"):
-        # Save JD text and team_df in session_state
         if jd_file is not None:
             if jd_file.type == 'text/plain':
                 jd_text = jd_file.getvalue().decode('utf-8')
@@ -126,6 +143,7 @@ elif page == "Upload & Profiles":
                 st.success("Uploaded successfully! Now go to Dashboard.")
             except Exception as e:
                 st.error("Failed to load team file: " + str(e))
+
 elif page == "Dashboard":
     st.header("Analysis Dashboard")
     jd_text = st.session_state.get('jd_text', None)
@@ -144,22 +162,17 @@ elif page == "Dashboard":
         viz_values = [int(100 * team_skill_counts.get(s,0) / team_size) for s in viz_skills]
         fig = radar_chart(viz_skills, viz_values)
         st.pyplot(fig)
+        st.session_state['missing_detail'] = missing_detail
+
 elif page == "Training Suggestions":
     st.header("Suggested Trainings & Mentoring")
     missing_detail = st.session_state.get('missing_detail', [])
     if not missing_detail:
         st.info("Go to Dashboard first to compute gaps.")
     else:
-        # Example: display suggestions
-        df_suggestions = pd.DataFrame([
-            { 'skill': m['skill'],
-              'course': f"Intro to {m['skill'].title()}",
-              'mentor': f"Senior {m['skill'].title()} Specialist"
-            }
-            for m in missing_detail
-        ])
+        df_suggestions = pd.DataFrame(suggest_training_for_skills([m['skill'] for m in missing_detail]))
         st.dataframe(df_suggestions)
+
 elif page == "About":
     st.header("About this App")
-    st.write("Built by your AI application builder. Version 0.1.")
-
+    st.write("Built by your AI application builder. Version 0.1. Uses Gemini API for skill analysis.")
