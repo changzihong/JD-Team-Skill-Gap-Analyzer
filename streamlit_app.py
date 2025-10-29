@@ -752,7 +752,7 @@ if current_page == 'Home':
     - 🤖 **AI-Powered** - Smart recommendations for workforce development
     - 💼 **HR-Focused** - Built specifically for HR and L&D professionals
     """)
-    st.markdown('</div>', unsafe_allow_html=True)
+    #st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # PAGE: ACCOUNT
