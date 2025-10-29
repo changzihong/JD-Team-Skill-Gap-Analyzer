@@ -61,7 +61,8 @@ st.markdown("""
 # ----------------------
 # Backend: Gemini API Setup
 # ----------------------
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Set via environment variable or Streamlit secrets
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
+  # Set via environment variable or Streamlit secrets
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 if not GEMINI_API_KEY:
