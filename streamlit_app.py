@@ -1,249 +1,233 @@
-import streamlit as st
+import os
+import re
+import json
+import time
+import requests
 import pandas as pd
 import numpy as np
+import streamlit as st
 import matplotlib.pyplot as plt
-import re
-import requests
-import os
 from io import StringIO
 from PyPDF2 import PdfReader
 
-# --- SETUP ---
-st.set_page_config(page_title="AI Skill Gap Analyzer", layout="wide")
+# ---------------------------
+# Streamlit Config
+# ---------------------------
+st.set_page_config(page_title="AI Skills Radar", layout="wide")
 
-# --- GEMINI API CONFIG ---
-GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+# ---------------------------
+# Load Gemini API Key
+# ---------------------------
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
-# --- CSS STYLING ---
+if not GEMINI_API_KEY:
+    st.error("⚠️ Gemini API key not found. Please set it in Streamlit Secrets or environment variables.")
+
+# ---------------------------
+# Custom CSS and JavaScript
+# ---------------------------
 st.markdown("""
-    <style>
-    body {
-        background-color: #0d0d0d;
-        color: white;
-        font-family: 'Poppins', sans-serif;
-        margin: 0;
-        padding: 0;
-    }
-    .navbar {
-        position: fixed;
-        top: 0;
-        width: 100%;
-        background-color: black;
-        padding: 12px 0;
-        text-align: center;
-        z-index: 1000;
-        border-bottom: 1px solid #333;
-    }
-    .navbar a {
-        color: white;
-        text-decoration: none;
-        margin: 0 20px;
-        font-weight: 500;
-        transition: color 0.3s ease, transform 0.3s ease;
-    }
-    .navbar a:hover {
-        color: #aaa;
-        transform: scale(1.1);
-    }
-    .footer {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        background-color: black;
-        color: #bbb;
-        text-align: center;
-        padding: 8px;
-        font-size: 0.85rem;
-        border-top: 1px solid #333;
-    }
-    .main-content {
-        padding-top: 80px;
-        padding-bottom: 80px;
-        animation: fadeIn 1s ease-in;
-    }
-    @keyframes fadeIn {
-        from {opacity: 0;}
-        to {opacity: 1;}
-    }
-    .stButton>button {
-        background-color: white;
-        color: black;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        font-weight: 500;
-    }
-    .stButton>button:hover {
-        background-color: #333;
-        color: white;
-        transform: scale(1.05);
-    }
-    </style>
-""", unsafe_allow_html=True)
+<style>
+body {
+    background-color: #f8f8f8;
+    color: #000;
+    font-family: 'Poppins', sans-serif;
+}
+.navbar {
+    background-color: #000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    padding: 15px 0;
+    text-align: center;
+    color: white;
+    font-size: 22px;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.footer {
+    background-color: #000;
+    color: white;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+}
+.main-container {
+    padding-top: 100px;
+    padding-bottom: 60px;
+}
+.upload-section, .dashboard-section {
+    background-color: white;
+    border-radius: 16px;
+    padding: 25px;
+    margin: 20px auto;
+    box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease-in-out;
+}
+.upload-section:hover, .dashboard-section:hover {
+    transform: scale(1.01);
+}
+button[kind="primary"] {
+    background-color: #000 !important;
+    color: white !important;
+    border-radius: 8px;
+}
+</style>
 
-# --- JAVASCRIPT (scroll animation) ---
-st.markdown("""
-    <script>
-    document.addEventListener('scroll', function() {
-        const navbar = document.querySelector('.navbar');
-        if (window.scrollY > 30) {
-            navbar.style.backgroundColor = '#1a1a1a';
-        } else {
-            navbar.style.backgroundColor = 'black';
-        }
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sections = document.querySelectorAll('.upload-section, .dashboard-section');
+    sections.forEach((section, idx) => {
+        section.style.opacity = 0;
+        setTimeout(() => {
+            section.style.transition = 'opacity 1.2s';
+            section.style.opacity = 1;
+        }, 300 * idx);
     });
-    </script>
+});
+</script>
 """, unsafe_allow_html=True)
 
-# --- NAVBAR ---
-st.markdown("""
-<div class="navbar">
-    <a href="#home">Home</a>
-    <a href="#analyzer">Analyzer</a>
-    <a href="#login">Login / Signup</a>
-    <a href="#about">About</a>
-</div>
-""", unsafe_allow_html=True)
+# ---------------------------
+# Navbar
+# ---------------------------
+st.markdown('<div class="navbar">📊 AI Skills Radar (JD Team Skill Gap Analyzer)</div>', unsafe_allow_html=True)
 
-# --- MAIN CONTENT START ---
-st.markdown('<div class="main-content">', unsafe_allow_html=True)
+# ---------------------------
+# Skill Extract & Analyzer Logic
+# ---------------------------
+COMMON_SKILLS = [
+    'python','sql','excel','data analysis','communication','project management',
+    'leadership','product management','machine learning','nlp','aws','gcp','react',
+    'java','c#','sales','negotiation','recruiting','interviewing','coaching','training'
+]
 
-# ---------------------- HOME ----------------------
-st.markdown('<a name="home"></a>', unsafe_allow_html=True)
-st.title("🧭 AI Skill Gap Analyzer")
-st.write("Identify, analyze, and bridge skill gaps between your team and job descriptions — powered by Gemini AI.")
-
-# ---------------------- LOGIN / SIGNUP ----------------------
-st.markdown('<a name="login"></a>', unsafe_allow_html=True)
-st.subheader("🔐 Login / Signup")
-
-with st.form("login_form"):
-    col1, col2 = st.columns(2)
-    with col1:
-        username = st.text_input("Username / Email")
-        password = st.text_input("Password", type="password")
-    with col2:
-        mode = st.radio("Select Mode", ["Login", "Signup"])
-    submitted = st.form_submit_button("Submit")
-
-if submitted:
-    if username and password:
-        st.success(f"{mode} successful! Welcome, {username}.")
-    else:
-        st.error("Please enter both username and password.")
-
-# ---------------------- ANALYZER ----------------------
-st.markdown('<a name="analyzer"></a>', unsafe_allow_html=True)
-st.subheader("📊 JD & Team Skill Analyzer")
-
-jd_file = st.file_uploader("Upload Job Description (txt or pdf)", type=["txt", "pdf"])
-jd_text = st.text_area("Or paste JD text here", height=150)
-team_file = st.file_uploader("Upload Team Profiles (CSV or Excel)", type=["csv", "xlsx"])
-
-def extract_skills(text):
-    skills = ['python', 'sql', 'excel', 'data analysis', 'communication', 'project management',
-              'leadership', 'product management', 'machine learning', 'nlp', 'aws', 'gcp', 'react',
-              'java', 'sales', 'negotiation', 'recruiting', 'training']
+def extract_skills_from_text(text):
     text_lower = text.lower()
-    found = [s for s in skills if s in text_lower]
-    return list(set(found))
+    found = [s for s in COMMON_SKILLS if re.search(r'\b' + re.escape(s) + r'\b', text_lower)]
+    if not found:
+        tokens = re.findall(r"[a-zA-Z]{4,}", text_lower)
+        found = tokens[:8]
+    return sorted(set(found))
 
-def analyze_gap(jd_text, team_df):
-    jd_skills = extract_skills(jd_text)
-    team_skills = []
-    for s in team_df.columns:
-        for val in team_df[s].astype(str):
-            team_skills.extend(extract_skills(val))
+def aggregate_team_skills(df):
+    counts = {}
+    if 'skills' in df.columns:
+        for row in df['skills'].dropna():
+            for s in [x.strip().lower() for x in re.split('[,;|/\\\\n]', str(row)) if x.strip()]:
+                counts[s] = counts.get(s, 0) + 1
+    else:
+        for _, r in df.iterrows():
+            combined = ' '.join([str(x) for x in r.values if pd.notna(x)])
+            for s in extract_skills_from_text(combined):
+                counts[s] = counts.get(s, 0) + 1
+    return counts
+
+def compute_skill_match(jd_skills, team_skill_counts):
     jd_set = set(jd_skills)
-    team_set = set(team_skills)
+    team_set = set(team_skill_counts.keys())
     matched = jd_set & team_set
     missing = jd_set - team_set
-    return matched, missing
+    score = int(100 * len(matched) / max(1, len(jd_set)))
+    missing_detail = [{'skill': s, 'team_count': team_skill_counts.get(s, 0)} for s in sorted(missing)]
+    return score, sorted(matched), missing_detail
 
-def call_gemini_summary(matched, missing):
-    """Call Gemini API to generate summarized insight."""
-    if not GEMINI_API_KEY:
-        return "⚠️ Gemini API key not configured."
-    
-    prompt = f"""
-    You are an AI HR assistant. 
-    Based on the following skill analysis, summarize insights in **point form**, around **200 words**.
-    
-    - Matched skills: {', '.join(matched)}
-    - Missing skills: {', '.join(missing)}
-    
-    Focus on:
-    • Overall readiness of the team  
-    • Key missing skill areas  
-    • Recommendations for training or hiring  
-    • Predictive note on 6-month skill needs  
-    Keep it professional and concise.
-    """
+def radar_chart(skills, values, title='Team Skills Radar'):
+    N = len(skills)
+    if N == 0: return None
+    angles = np.linspace(0, 2*np.pi, N, endpoint=False).tolist()
+    stats = values + values[:1]
+    angles += angles[:1]
+    fig, ax = plt.subplots(figsize=(5,5), subplot_kw=dict(polar=True))
+    ax.plot(angles, stats, linewidth=2, color='black')
+    ax.fill(angles, stats, alpha=0.25, color='gray')
+    ax.set_thetagrids(np.degrees(angles[:-1]), skills)
+    ax.set_ylim(0,100)
+    ax.set_title(title, size=14)
+    return fig
 
+def call_gemini(prompt, system_prompt="You are an AI HR analyst.", max_tokens=400):
     headers = {"Content-Type": "application/json"}
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
+        "contents": [{"parts": [{"text": f"{system_prompt}\n\n{prompt}"}]}]
     }
-    resp = requests.post(
-        GEMINI_API_URL,
-        headers=headers,
-        params={"key": GEMINI_API_KEY},
-        json=payload,
-        timeout=30,
-    )
-    data = resp.json()
+    params = {"key": GEMINI_API_KEY}
+    response = requests.post(GEMINI_API_URL, headers=headers, params=params, json=payload)
+    data = response.json()
     try:
-        return data["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception:
-        return f"Error parsing response: {data}"
+        return data['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        return f"Error parsing response: {e}\n\nRaw: {data}"
 
-if st.button("Run Skill Gap Analysis"):
-    if jd_file or jd_text:
-        if jd_file and jd_file.type == "application/pdf":
-            reader = PdfReader(jd_file)
-            jd_text = "\n".join(page.extract_text() for page in reader.pages)
-        if team_file:
-            team_df = pd.read_csv(team_file) if team_file.name.endswith(".csv") else pd.read_excel(team_file)
-            matched, missing = analyze_gap(jd_text, team_df)
-            st.success("✅ Analysis Complete")
-            st.write("**Matched Skills:**", list(matched))
-            st.write("**Missing Skills:**", list(missing))
+# ---------------------------
+# Main App Container
+# ---------------------------
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-            # Radar chart
-            all_skills = list(matched) + list(missing)
-            values = [100 if s in matched else 40 for s in all_skills]
-            N = len(all_skills)
-            angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
-            values += values[:1]
-            angles += angles[:1]
-            fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-            ax.plot(angles, values, linewidth=2, linestyle='solid')
-            ax.fill(angles, values, alpha=0.25)
-            ax.set_thetagrids(np.degrees(angles[:-1]), all_skills)
-            ax.set_title("Team Readiness Radar")
-            st.pyplot(fig)
+# Upload Section
+st.subheader("📁 Upload JD & Team Profiles")
+jd_file = st.file_uploader("Upload Job Description (TXT/PDF)", type=['txt','pdf'])
+team_file = st.file_uploader("Upload Team Profiles (CSV/Excel)", type=['csv','xlsx'])
+jd_text = ""
 
-            # Call Gemini summary
+if jd_file:
+    if jd_file.type == "text/plain":
+        jd_text = jd_file.getvalue().decode("utf-8")
+    elif jd_file.type == "application/pdf":
+        reader = PdfReader(jd_file)
+        jd_text = "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
+    st.text_area("Job Description Text", jd_text, height=200)
+
+if team_file:
+    team_df = pd.read_csv(team_file) if team_file.name.endswith(".csv") else pd.read_excel(team_file)
+    st.dataframe(team_df.head())
+
+# Dashboard
+if st.button("🔍 Analyze Skills"):
+    if jd_text and team_file:
+        jd_skills = extract_skills_from_text(jd_text)
+        team_skill_counts = aggregate_team_skills(team_df)
+        score, matched, missing_detail = compute_skill_match(jd_skills, team_skill_counts)
+        st.metric(label="Team-JD Match Score", value=f"{score}%")
+
+        # Radar Visualization
+        skills_to_plot = jd_skills[:8]
+        team_size = max(1, sum(team_skill_counts.values()))
+        values = [int(100 * team_skill_counts.get(s,0)/team_size) for s in skills_to_plot]
+        fig = radar_chart(skills_to_plot, values)
+        if fig: st.pyplot(fig)
+
+        # AI Summary (Gemini)
+        with st.spinner("🤖 Generating AI Summary..."):
+            analysis_prompt = f"""
+Job Description Skills: {', '.join(jd_skills)}
+Matched Skills: {', '.join(matched)}
+Missing Skills: {[m['skill'] for m in missing_detail]}
+
+Summarize this in point form (around 200 words) focusing on:
+- Key strengths
+- Major skill gaps
+- Suggested training directions
+"""
+            summary = call_gemini(analysis_prompt, system_prompt="You are an AI HR Analyst generating concise workforce insights.")
             st.markdown("### 📊 AI-Generated Skill Gap Insights")
-            with st.spinner("Generating AI summary..."):
-                summary = call_gemini_summary(matched, missing)
-                st.markdown(f"💡 **Summary:**\n\n{summary}")
-        else:
-            st.error("Please upload team profiles file.")
+            st.write(summary)
     else:
-        st.error("Please provide a JD text or upload file.")
+        st.warning("Please upload both JD and team profile files before analysis.")
 
-# ---------------------- ABOUT ----------------------
-st.markdown('<a name="about"></a>', unsafe_allow_html=True)
-st.subheader("💡 About This Application")
-st.write("This AI Skill Gap Analyzer helps HR and L&D managers quickly identify skill mismatches using generative AI insights.")
-
-# --- END CONTENT ---
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- FOOTER ---
+# ---------------------------
+# Footer
+# ---------------------------
 st.markdown("""
 <div class="footer">
-    © 2025 AI Skill Gap Analyzer | Powered by Gemini API & Streamlit
+    © 2025 AI Skills Radar | Designed by HR AI Application Builder
 </div>
 """, unsafe_allow_html=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
