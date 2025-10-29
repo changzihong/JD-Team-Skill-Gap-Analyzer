@@ -52,28 +52,116 @@ body {
     overflow-x: hidden;
 }
 
-/* Hide default Streamlit header */
-header[data-testid="stHeader"] {
-    display: none !important;
+/* Fixed top navbar with glass effect */
+.top-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    color: white;
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
 }
 
-#MainMenu {
-    visibility: hidden;
+.top-navbar:hover {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
 }
 
-footer {
-    visibility: hidden;
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-title {
+    font-weight: 700;
+    font-size: 22px;
+    color: white;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.3s ease;
+}
+
+.nav-title:hover {
+    letter-spacing: 0px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.nav-link {
+    color: #e0e0e0;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 15px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+.nav-link:hover::before {
+    left: 100%;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+}
+
+.nav-link:active {
+    transform: translateY(0px);
+}
+
+/* Hide Streamlit default elements */
+.stElementContainer, .stMarkdown {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Main container */
 .main-container {
-    padding-top: 20px;
-    padding-bottom: 60px;
+    padding-top: 90px;
+    padding-bottom: 80px;
     max-width: 1400px;
     margin: 0 auto;
     padding-left: 40px;
     padding-right: 40px;
-    min-height: calc(100vh - 250px);
 }
 
 /* Section cards with modern design */
@@ -81,7 +169,7 @@ footer {
     background: white;
     border-radius: 20px;
     padding: 40px;
-    margin: 15px 0;
+    margin: 30px 0;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
     border: 1px solid rgba(0, 0, 0, 0.05);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -178,23 +266,6 @@ footer {
     transform: translateY(-1px) !important;
 }
 
-/* Navigation bar styling */
-.nav-container {
-    background: #1a1a1a;
-    padding: 16px 0;
-    margin: -20px -40px 20px -40px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-
-.nav-header {
-    color: white;
-    font-size: 20px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 12px;
-    letter-spacing: 0.5px;
-}
-
 /* Input fields */
 .stTextInput>div>div>input,
 .stTextArea>div>div>textarea {
@@ -258,61 +329,18 @@ footer {
 
 /* Footer */
 .app-footer {
-    background: #1a1a1a;
+    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
     color: #e0e0e0;
-    width: 100%;
-    padding: 30px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin-top: 40px;
-}
-
-.footer-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 40px;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 40px;
-    text-align: left;
-}
-
-.footer-section h3 {
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-
-.footer-section p {
-    font-size: 14px;
-    line-height: 1.6;
-    color: #b0b0b0;
-    margin: 6px 0;
-}
-
-.footer-section a {
-    color: #b0b0b0;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.footer-section a:hover {
-    color: white;
-}
-
-.footer-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px 40px;
     text-align: center;
-    margin-top: 20px;
-    padding-top: 20px;
+    font-size: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 13px;
-    color: #888;
-}
-
-/* Auth form styling */
-.auth-form {
-    max-width: 500px;
-    margin: 0 auto;
+    backdrop-filter: blur(20px);
+    z-index: 9998;
 }
 
 /* Animations */
@@ -367,7 +395,7 @@ html {
     padding: 60px 40px;
     border-radius: 20px;
     text-align: center;
-    margin: 15px 0;
+    margin: 30px 0;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -426,9 +454,23 @@ html {
 
 /* Responsive design */
 @media (max-width: 768px) {
+    .top-navbar {
+        padding: 12px 20px;
+    }
+    
+    .nav-links {
+        gap: 4px;
+    }
+    
+    .nav-link {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
     .main-container {
         padding-left: 20px;
         padding-right: 20px;
+        padding-top: 80px;
     }
     
     .section-card {
@@ -446,11 +488,6 @@ html {
     
     .hero-subtitle {
         font-size: 16px;
-    }
-    
-    .footer-content {
-        grid-template-columns: 1fr;
-        gap: 24px;
     }
 }
 
@@ -472,6 +509,22 @@ html {
     background: #333;
 }
 </style>
+
+<script>
+// Navbar scroll effect
+window.addEventListener('scroll', function() {
+    const navbar = document.querySelector('.top-navbar');
+    if (navbar) {
+        if (window.scrollY > 50) {
+            navbar.style.padding = '12px 40px';
+            navbar.style.background = 'rgba(0, 0, 0, 0.98)';
+        } else {
+            navbar.style.padding = '16px 40px';
+            navbar.style.background = 'rgba(0, 0, 0, 0.95)';
+        }
+    }
+});
+</script>
 """, unsafe_allow_html=True)
 
 # ---------------------------
@@ -480,6 +533,65 @@ html {
 def set_page(page_name):
     st.session_state['current_page'] = page_name
     st.rerun()
+
+# ---------------------------
+# Render Navigation Bar
+# ---------------------------
+current_page = st.session_state['current_page']
+
+st.markdown(f"""
+<div class="top-navbar">
+  <div class="nav-left">
+    <div class="nav-title">📊 AI Skills Radar</div>
+  </div>
+  <div class="nav-links">
+    <div class="nav-link {'active' if current_page == 'Home' else ''}" id="nav-home">Home</div>
+    <div class="nav-link {'active' if current_page == 'Account' else ''}" id="nav-account">Account</div>
+    <div class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" id="nav-upload">Upload & Analyze</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Navigation buttons (hidden but functional)
+col_nav1, col_nav2, col_nav3 = st.columns(3)
+with col_nav1:
+    if st.button("🏠 Home", key="nav_home_btn", use_container_width=True):
+        set_page('Home')
+with col_nav2:
+    if st.button("🔐 Account", key="nav_account_btn", use_container_width=True):
+        set_page('Account')
+with col_nav3:
+    if st.button("📁 Upload & Analyze", key="nav_upload_btn", use_container_width=True):
+        set_page('Upload & Analyze')
+
+# Hide navigation buttons with CSS
+st.markdown("""
+<style>
+div[data-testid="column"] > div > div > div > button {
+    display: none;
+}
+</style>
+<script>
+document.getElementById('nav-home').onclick = function() {
+    const buttons = parent.document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Home')) btn.click();
+    });
+};
+document.getElementById('nav-account').onclick = function() {
+    const buttons = parent.document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Account')) btn.click();
+    });
+};
+document.getElementById('nav-upload').onclick = function() {
+    const buttons = parent.document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Upload & Analyze')) btn.click();
+    });
+};
+</script>
+""", unsafe_allow_html=True)
 
 # ---------------------------
 # Skill Extract & Analyzer Logic
@@ -556,31 +668,6 @@ def call_gemini(prompt, system_prompt="You are an AI HR analyst generating conci
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
 # ---------------------------
-# Render Navigation Bar (Functional)
-# ---------------------------
-current_page = st.session_state['current_page']
-
-st.markdown('<div class="nav-container">', unsafe_allow_html=True)
-st.markdown('<div class="nav-header">📊 AI Skills Radar</div>', unsafe_allow_html=True)
-
-nav_col1, nav_col2, nav_col3 = st.columns(3)
-
-with nav_col1:
-    if st.button("🏠 Home", key="nav_home", use_container_width=True, type="primary" if current_page == 'Home' else "secondary"):
-        set_page('Home')
-
-with nav_col2:
-    if st.button("🔐 Account", key="nav_account", use_container_width=True, type="primary" if current_page == 'Account' else "secondary"):
-        set_page('Account')
-
-with nav_col3:
-    if st.button("📁 Upload & Analyze", key="nav_upload", use_container_width=True, type="primary" if current_page == 'Upload & Analyze' else "secondary"):
-        set_page('Upload & Analyze')
-
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown("---")
-
-# ---------------------------
 # PAGE: HOME
 # ---------------------------
 if current_page == 'Home':
@@ -642,71 +729,59 @@ if current_page == 'Home':
 # PAGE: ACCOUNT
 # ---------------------------
 elif current_page == 'Account':
-    # Check if user is already logged in
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-header">🔐 Account Management</h2>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🔓 Login")
+        user = st.text_input("Username", key="login_user", placeholder="Enter your username")
+        pwd = st.text_input("Password", type="password", key="login_pwd", placeholder="Enter your password")
+        if st.button("🔓 Login", key="login_btn", use_container_width=True):
+            if user == "admin" and pwd == "1234":
+                st.success("✅ Logged in successfully as admin!")
+                st.session_state['user'] = user
+                st.balloons()
+            else:
+                st.error("❌ Invalid credentials. Please try again.")
+    
+    with col2:
+        st.markdown("### ✨ Sign Up")
+        new_user = st.text_input("New Username", key="signup_user", placeholder="Choose a username")
+        new_pwd = st.text_input("New Password", type="password", key="signup_pwd", placeholder="Choose a password")
+        confirm_pwd = st.text_input("Confirm Password", type="password", key="confirm_pwd", placeholder="Confirm your password")
+        if st.button("✨ Create Account", key="signup_btn", use_container_width=True):
+            if new_user and new_pwd:
+                if new_pwd == confirm_pwd:
+                    st.success(f"✅ Account '{new_user}' created successfully!")
+                    st.session_state['user'] = new_user
+                    st.balloons()
+                else:
+                    st.error("❌ Passwords do not match!")
+            else:
+                st.error("❌ Please provide both username and password.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # User info section if logged in
     if 'user' in st.session_state:
         st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.markdown('<h2 class="section-header">👤 User Profile</h2>', unsafe_allow_html=True)
+        st.markdown(f"""
+        **Current User:** {st.session_state['user']}
         
-        # Centered profile info
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.markdown(f"""
-            <div style="text-align: center; padding: 20px;">
-                <h3>Welcome, {st.session_state['user']}!</h3>
-                <p><strong>Account Status:</strong> Active ✅</p>
-                <p><strong>Access Level:</strong> Full Access</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
-                del st.session_state['user']
-                st.success("Logged out successfully!")
-                st.rerun()
+        **Account Status:** Active ✅
+        
+        **Access Level:** Full Access
+        """)
+        
+        if st.button("🚪 Logout", key="logout_btn"):
+            del st.session_state['user']
+            st.success("Logged out successfully!")
+            st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        # Centered auth form
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.markdown('<div class="section-card auth-form">', unsafe_allow_html=True)
-            st.markdown('<h2 class="section-header" style="text-align: center;">🔐 Account</h2>', unsafe_allow_html=True)
-            
-            # Single form with tabs for Login/Signup
-            tab1, tab2 = st.tabs(["🔓 Login", "✨ Sign Up"])
-            
-            with tab1:
-                st.markdown("### Welcome Back!")
-                user = st.text_input("Username", key="login_user", placeholder="Enter your username")
-                pwd = st.text_input("Password", type="password", key="login_pwd", placeholder="Enter your password")
-                if st.button("🔓 Login", key="login_btn", use_container_width=True):
-                    if user == "admin" and pwd == "1234":
-                        st.success("✅ Logged in successfully!")
-                        st.session_state['user'] = user
-                        st.balloons()
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        st.error("❌ Invalid credentials. Please try again.")
-            
-            with tab2:
-                st.markdown("### Create New Account")
-                new_user = st.text_input("Username", key="signup_user", placeholder="Choose a username")
-                new_pwd = st.text_input("Password", type="password", key="signup_pwd", placeholder="Choose a password")
-                confirm_pwd = st.text_input("Confirm Password", type="password", key="confirm_pwd", placeholder="Confirm your password")
-                if st.button("✨ Create Account", key="signup_btn", use_container_width=True):
-                    if new_user and new_pwd:
-                        if new_pwd == confirm_pwd:
-                            st.success(f"✅ Account '{new_user}' created successfully!")
-                            st.session_state['user'] = new_user
-                            st.balloons()
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                            st.error("❌ Passwords do not match!")
-                    else:
-                        st.error("❌ Please provide both username and password.")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # PAGE: UPLOAD & ANALYZE
@@ -835,27 +910,6 @@ st.markdown("</div>", unsafe_allow_html=True)
 # ---------------------------
 st.markdown("""
 <div class="app-footer">
-    <div class="footer-content">
-        <div class="footer-section">
-            <h3>About AI Skills Radar</h3>
-            <p>Your intelligent workforce analytics platform that helps HR and L&D teams align job requirements with current team capabilities and plan upskilling strategies.</p>
-        </div>
-        <div class="footer-section">
-            <h3>Contact Us</h3>
-            <p>📧 Email: <a href="mailto:info@aiskillsradar.com">info@aiskillsradar.com</a></p>
-            <p>📞 Phone: +1 (555) 123-4567</p>
-            <p>💬 Support: <a href="mailto:support@aiskillsradar.com">support@aiskillsradar.com</a></p>
-        </div>
-        <div class="footer-section">
-            <h3>Address</h3>
-            <p>123 Tech Boulevard</p>
-            <p>Innovation District</p>
-            <p>San Francisco, CA 94105</p>
-            <p>United States</p>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        © 2025 AI Skills Radar | Empowering HR with AI-Driven Insights | All Rights Reserved
-    </div>
+    © 2025 AI Skills Radar | Empowering HR with AI-Driven Insights
 </div>
 """, unsafe_allow_html=True)
