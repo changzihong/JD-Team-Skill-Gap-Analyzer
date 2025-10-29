@@ -52,101 +52,71 @@ body {
     overflow-x: hidden;
 }
 
-/* Fixed top navbar with glass effect */
+/* Fixed top navbar */
 .top-navbar {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 9999;
-    background: #000000;
-    color: white;
-    padding: 18px 40px;
+    background-color: #333333;
+    padding: 0;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .nav-left {
+    display: flex;
+    align-items: center;
+    padding: 14px 30px;
+}
+
+.nav-brand {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
 .nav-logo {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    font-weight: 700;
-    transition: transform 0.3s ease;
-}
-
-.nav-logo:hover {
-    transform: rotate(10deg) scale(1.1);
+    font-size: 24px;
 }
 
 .nav-title {
     font-weight: 700;
-    font-size: 20px;
+    font-size: 18px;
     color: white;
-    letter-spacing: -0.3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .nav-links {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
     display: flex;
-    gap: 8px;
     align-items: center;
 }
 
 .nav-link {
+    display: block;
     color: white;
+    padding: 14px 20px;
     text-decoration: none;
-    padding: 10px 20px;
-    border-radius: 10px;
     font-weight: 500;
     font-size: 15px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.3s ease;
     cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    background: transparent;
-}
-
-.nav-link.active {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-}
-
-.nav-link::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.nav-link:hover::before {
-    left: 100%;
 }
 
 .nav-link:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    transform: translateY(-2px);
+    background-color: #111111;
 }
 
-.nav-link:active {
-    transform: translateY(0px);
+.nav-link.active {
+    background-color: #111111;
 }
 
 /* Hide Streamlit default elements */
@@ -157,7 +127,7 @@ body {
 
 /* Main container */
 .main-container {
-    padding-top: 90px;
+    padding-top: 52px;
     padding-bottom: 80px;
     max-width: 1400px;
     margin: 0 auto;
@@ -456,22 +426,30 @@ html {
 /* Responsive design */
 @media (max-width: 768px) {
     .top-navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .nav-left {
+        width: 100%;
         padding: 12px 20px;
     }
     
     .nav-links {
-        gap: 4px;
+        width: 100%;
+        flex-direction: column;
     }
     
     .nav-link {
-        padding: 8px 12px;
-        font-size: 13px;
+        width: 100%;
+        padding: 12px 20px;
+        text-align: left;
     }
     
     .main-container {
         padding-left: 20px;
         padding-right: 20px;
-        padding-top: 80px;
+        padding-top: 120px;
     }
     
     .section-card {
@@ -532,14 +510,16 @@ current_page = st.session_state['current_page']
 st.markdown(f"""
 <div class="top-navbar">
   <div class="nav-left">
-    <div class="nav-logo">📊</div>
-    <div class="nav-title">AI Skills Radar</div>
+    <div class="nav-brand">
+      <span class="nav-logo">📊</span>
+      <span class="nav-title">AI Skills Radar</span>
+    </div>
   </div>
-  <div class="nav-links">
-    <div class="nav-link {'active' if current_page == 'Home' else ''}" id="nav-home">Home</div>
-    <div class="nav-link {'active' if current_page == 'Account' else ''}" id="nav-account">Account</div>
-    <div class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" id="nav-upload">Upload & Analyze</div>
-  </div>
+  <ul class="nav-links">
+    <li><a class="nav-link {'active' if current_page == 'Home' else ''}" id="nav-home">Home</a></li>
+    <li><a class="nav-link {'active' if current_page == 'Account' else ''}" id="nav-account">Account</a></li>
+    <li><a class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" id="nav-upload">Upload & Analyze</a></li>
+  </ul>
 </div>
 """, unsafe_allow_html=True)
 
