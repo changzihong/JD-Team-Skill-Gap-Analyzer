@@ -328,15 +328,18 @@ div[data-testid="column"] {
     position: relative;
     bottom: 0;
     left: 0;
-    right: 0;
-    padding: 30px 40px;
+    width: 100%;
+    padding: 30px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin-top: 40px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .footer-content {
     max-width: 1400px;
     margin: 0 auto;
+    padding: 0 40px;
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: 40px;
@@ -609,15 +612,50 @@ st.markdown(f"""
 # JavaScript to handle navigation clicks
 st.markdown("""
 <script>
-document.getElementById('nav-home').onclick = function() {
-    window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'Home'}, '*');
-};
-document.getElementById('nav-account').onclick = function() {
-    window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'Account'}, '*');
-};
-document.getElementById('nav-upload').onclick = function() {
-    window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'Upload & Analyze'}, '*');
-};
+(function() {
+    // Wait for DOM to be ready
+    setTimeout(function() {
+        const homeNav = document.getElementById('nav-home');
+        const accountNav = document.getElementById('nav-account');
+        const uploadNav = document.getElementById('nav-upload');
+        
+        if (homeNav) {
+            homeNav.addEventListener('click', function(e) {
+                e.preventDefault();
+                const buttons = window.parent.document.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.innerText === 'home') {
+                        btn.click();
+                    }
+                });
+            });
+        }
+        
+        if (accountNav) {
+            accountNav.addEventListener('click', function(e) {
+                e.preventDefault();
+                const buttons = window.parent.document.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.innerText === 'account') {
+                        btn.click();
+                    }
+                });
+            });
+        }
+        
+        if (uploadNav) {
+            uploadNav.addEventListener('click', function(e) {
+                e.preventDefault();
+                const buttons = window.parent.document.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.innerText === 'upload') {
+                        btn.click();
+                    }
+                });
+            });
+        }
+    }, 500);
+})();
 </script>
 """, unsafe_allow_html=True)
 
@@ -964,7 +1002,7 @@ Provide a concise summary in bullet/point form (~200 words) focusing on:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------------------------
-# Footer
+# Footer (moved outside main container for full width)
 # ---------------------------
 st.markdown("""
 <div class="app-footer">
