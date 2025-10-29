@@ -16,6 +16,12 @@ from PyPDF2 import PdfReader
 st.set_page_config(page_title="AI Skills Radar", layout="wide")
 
 # ---------------------------
+# Initialize Session State for Page Navigation
+# ---------------------------
+if 'current_page' not in st.session_state:
+    st.session_state['current_page'] = 'Home'
+
+# ---------------------------
 # Load Gemini API Key
 # ---------------------------
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
@@ -109,6 +115,11 @@ body {
     position: relative;
     overflow: hidden;
     background: transparent;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
 }
 
 .nav-link::before {
@@ -342,11 +353,6 @@ body {
     animation: fadeInUp 0.6s ease both;
 }
 
-.section-card:nth-child(1) { animation-delay: 0.1s; }
-.section-card:nth-child(2) { animation-delay: 0.2s; }
-.section-card:nth-child(3) { animation-delay: 0.3s; }
-.section-card:nth-child(4) { animation-delay: 0.4s; }
-
 /* Smooth scroll */
 html {
     scroll-behavior: smooth;
@@ -376,6 +382,70 @@ html {
     border-left: 4px solid #ffa500 !important;
 }
 
+/* Hero section for home page */
+.hero-section {
+    background: linear-gradient(135deg, #000000 0%, #2d2d2d 100%);
+    color: white;
+    padding: 60px 40px;
+    border-radius: 20px;
+    text-align: center;
+    margin: 30px 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.hero-title {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+}
+
+.hero-subtitle {
+    font-size: 20px;
+    color: #e0e0e0;
+    margin-bottom: 30px;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    margin-top: 30px;
+}
+
+.feature-card {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 2px solid #f0f0f0;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    border-color: #000;
+}
+
+.feature-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.feature-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 12px;
+}
+
+.feature-desc {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .top-navbar {
@@ -383,7 +453,12 @@ html {
     }
     
     .nav-links {
-        display: none;
+        gap: 4px;
+    }
+    
+    .nav-link {
+        padding: 8px 12px;
+        font-size: 13px;
     }
     
     .main-container {
@@ -399,6 +474,14 @@ html {
     
     .section-header {
         font-size: 22px;
+    }
+    
+    .hero-title {
+        font-size: 32px;
+    }
+    
+    .hero-subtitle {
+        font-size: 16px;
     }
 }
 
@@ -422,69 +505,86 @@ html {
 </style>
 
 <script>
-// Smooth scroll to sections
-function scrollToId(id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.scrollIntoView({behavior: 'smooth', block:'start'});
-        
-        // Add highlight effect
-        el.style.transition = 'all 0.3s ease';
-        el.style.backgroundColor = '#f5f5f5';
-        setTimeout(() => {
-            el.style.backgroundColor = '';
-        }, 1000);
-    }
-}
-
 // Navbar scroll effect
 window.addEventListener('scroll', function() {
     const navbar = document.querySelector('.top-navbar');
-    if (window.scrollY > 50) {
-        navbar.style.padding = '12px 40px';
-        navbar.style.background = 'rgba(0, 0, 0, 0.98)';
-    } else {
-        navbar.style.padding = '16px 40px';
-        navbar.style.background = 'rgba(0, 0, 0, 0.95)';
+    if (navbar) {
+        if (window.scrollY > 50) {
+            navbar.style.padding = '12px 40px';
+            navbar.style.background = 'rgba(0, 0, 0, 0.98)';
+        } else {
+            navbar.style.padding = '16px 40px';
+            navbar.style.background = 'rgba(0, 0, 0, 0.95)';
+        }
     }
-});
-
-// Add ripple effect to buttons
-document.addEventListener('DOMContentLoaded', function() {
-    const buttons = document.querySelectorAll('.stButton>button');
-    buttons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            const ripple = document.createElement('span');
-            ripple.classList.add('ripple');
-            this.appendChild(ripple);
-            
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = e.clientX - rect.left - size/2 + 'px';
-            ripple.style.top = e.clientY - rect.top - size/2 + 'px';
-            
-            setTimeout(() => ripple.remove(), 600);
-        });
-    });
 });
 </script>
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Render fixed top navbar
+# Navigation Functions
 # ---------------------------
-st.markdown("""
+def set_page(page_name):
+    st.session_state['current_page'] = page_name
+    st.rerun()
+
+# ---------------------------
+# Render Navigation Bar
+# ---------------------------
+current_page = st.session_state['current_page']
+
+st.markdown(f"""
 <div class="top-navbar">
   <div class="nav-left">
     <div class="nav-title">📊 AI Skills Radar</div>
   </div>
   <div class="nav-links">
-    <a class="nav-link" href="javascript:scrollToId('home')">Home</a>
-    <a class="nav-link" href="javascript:scrollToId('account')">Account</a>
-    <a class="nav-link" href="javascript:scrollToId('upload-analyze')">Upload & Analyze</a>
+    <div class="nav-link {'active' if current_page == 'Home' else ''}" id="nav-home">Home</div>
+    <div class="nav-link {'active' if current_page == 'Account' else ''}" id="nav-account">Account</div>
+    <div class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" id="nav-upload">Upload & Analyze</div>
   </div>
 </div>
+""", unsafe_allow_html=True)
+
+# Navigation buttons (hidden but functional)
+col_nav1, col_nav2, col_nav3 = st.columns(3)
+with col_nav1:
+    if st.button("🏠 Home", key="nav_home_btn", use_container_width=True):
+        set_page('Home')
+with col_nav2:
+    if st.button("🔐 Account", key="nav_account_btn", use_container_width=True):
+        set_page('Account')
+with col_nav3:
+    if st.button("📁 Upload & Analyze", key="nav_upload_btn", use_container_width=True):
+        set_page('Upload & Analyze')
+
+# Hide navigation buttons with CSS
+st.markdown("""
+<style>
+div[data-testid="column"] > div > div > div > button {
+    display: none;
+}
+</style>
+<script>
+document.getElementById('nav-home').onclick = function() {
+    const buttons = parent.document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Home')) btn.click();
+    });
+};
+document.getElementById('nav-account').onclick = function() {
+    const buttons = parent.document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Account')) btn.click();
+    });
+};
+document.getElementById('nav-upload').onclick = function() {
+    const buttons = parent.document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Upload & Analyze')) btn.click();
+    });
+};
+</script>
 """, unsafe_allow_html=True)
 
 # ---------------------------
@@ -557,150 +657,230 @@ def call_gemini(prompt, system_prompt="You are an AI HR analyst generating conci
         return f"Error parsing response: {e}\n\nRaw: {data}"
 
 # ---------------------------
-# Main content container
+# Main Content Container
 # ---------------------------
 st.markdown('<div class="main-container">', unsafe_allow_html=True)
 
-# HOME SECTION
-st.markdown('<div id="home" class="section-card">', unsafe_allow_html=True)
-st.markdown('<h2 class="section-header">🏠 Welcome to AI Skills Radar</h2>', unsafe_allow_html=True)
-st.markdown("""
-AI Skills Radar is your intelligent workforce analytics platform that helps HR and L&D teams:
+# ---------------------------
+# PAGE: HOME
+# ---------------------------
+if current_page == 'Home':
+    st.markdown("""
+    <div class="hero-section">
+        <h1 class="hero-title">Welcome to AI Skills Radar</h1>
+        <p class="hero-subtitle">Your intelligent workforce analytics platform powered by AI</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h3 class="feature-title">Align Skills</h3>
+            <p class="feature-desc">Match job requirements with current team capabilities in real-time</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3 class="feature-title">Visualize Gaps</h3>
+            <p class="feature-desc">Identify skill gaps through interactive radar charts and analytics</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3 class="feature-title">AI Insights</h3>
+            <p class="feature-desc">Get actionable recommendations powered by Gemini AI technology</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <h3 class="feature-title">Plan Growth</h3>
+            <p class="feature-desc">Develop targeted upskilling and hiring strategies for your team</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-header">🚀 Getting Started</h2>', unsafe_allow_html=True)
+    st.markdown("""
+    ### How to use AI Skills Radar:
+    
+    1. **Create an Account** - Navigate to the Account page to sign up or log in
+    2. **Upload Your Data** - Go to Upload & Analyze to upload:
+       - Job Description (TXT or PDF format)
+       - Team Profiles (CSV or Excel format)
+    3. **Run Analysis** - Click the analyze button to get instant insights
+    4. **Review Results** - Get match scores, skill gaps, visualizations, and AI recommendations
+    
+    ### Why Choose AI Skills Radar?
+    
+    - ⚡ **Fast & Efficient** - Get results in seconds
+    - 🎯 **Accurate Matching** - Advanced algorithms for precise skill mapping
+    - 📊 **Visual Insights** - Easy-to-understand charts and metrics
+    - 🤖 **AI-Powered** - Smart recommendations for workforce development
+    - 💼 **HR-Focused** - Built specifically for HR and L&D professionals
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-- 🎯 **Align Skills** - Match job requirements with current team capabilities
-- 📊 **Visualize Gaps** - Identify skill gaps through interactive radar charts
-- 🤖 **AI Insights** - Get actionable recommendations powered by Gemini AI
-- 📈 **Plan Growth** - Develop targeted upskilling and hiring strategies
-
-Get started by navigating to **Upload & Analyze** to begin your skills assessment!
-""")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ACCOUNT SECTION (Login/Signup)
-st.markdown('<div id="account" class="section-card">', unsafe_allow_html=True)
-st.markdown('<h2 class="section-header">🔐 Account Management</h2>', unsafe_allow_html=True)
-
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown("### Login")
-    user = st.text_input("Username", key="login_user", placeholder="Enter your username")
-    pwd = st.text_input("Password", type="password", key="login_pwd", placeholder="Enter your password")
-    if st.button("🔓 Login", key="login_btn"):
-        if user == "admin" and pwd == "1234":
-            st.success("✅ Logged in successfully as admin!")
-            st.session_state['user'] = user
-        else:
-            st.error("❌ Invalid credentials. Please try again.")
-
-with col2:
-    st.markdown("### Sign Up")
-    new_user = st.text_input("New Username", key="signup_user", placeholder="Choose a username")
-    new_pwd = st.text_input("New Password", type="password", key="signup_pwd", placeholder="Choose a password")
-    if st.button("✨ Create Account", key="signup_btn"):
-        if new_user and new_pwd:
-            st.success(f"✅ Account '{new_user}' created successfully!")
-            st.session_state['user'] = new_user
-        else:
-            st.error("❌ Please provide both username and password.")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# UPLOAD & ANALYZE SECTION
-st.markdown('<div id="upload-analyze" class="section-card">', unsafe_allow_html=True)
-st.markdown('<h2 class="section-header">📁 Upload & Analyze</h2>', unsafe_allow_html=True)
-
-# Upload subsection
-st.markdown("### 📤 Upload Files")
-col_jd, col_team = st.columns(2)
-
-with col_jd:
-    st.markdown("**Job Description**")
-    jd_file = st.file_uploader("Upload JD (TXT/PDF)", type=['txt','pdf'], label_visibility="collapsed")
-
-with col_team:
-    st.markdown("**Team Profiles**")
-    team_file = st.file_uploader("Upload Team Data (CSV/Excel)", type=['csv','xlsx','xls'], label_visibility="collapsed")
-
-jd_text = ""
-
-if jd_file:
-    if jd_file.type == "text/plain":
-        jd_text = jd_file.getvalue().decode("utf-8")
-    elif jd_file.type == "application/pdf":
-        reader = PdfReader(jd_file)
-        jd_text = "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
-    st.text_area("📄 Job Description Preview (editable)", jd_text, height=200)
-
-team_df = None
-if team_file:
-    try:
-        team_df = pd.read_csv(team_file) if team_file.name.endswith(".csv") else pd.read_excel(team_file)
-        st.markdown("### 👥 Team Profiles Preview")
-        st.dataframe(team_df.head(), use_container_width=True)
-    except Exception as e:
-        st.error(f"❌ Failed to read team file: {e}")
-
-# Analysis subsection
-st.markdown("---")
-st.markdown("### 🔍 Run Analysis")
-
-if st.button("🚀 Analyze Skills Gap", key="analyze_btn"):
-    if not jd_text and 'jd_text' in st.session_state:
-        jd_text = st.session_state['jd_text']
-    if not jd_text:
-        st.warning("⚠️ Please provide a Job Description (upload or paste).")
-    elif team_df is None and 'team_df' not in st.session_state:
-        st.warning("⚠️ Please upload team profiles (CSV/Excel).")
-    else:
-        if 'team_df' in st.session_state:
-            team_df = st.session_state['team_df']
-
-        with st.spinner("🔄 Analyzing skills..."):
-            # Compute analysis
-            jd_skills = extract_skills_from_text(jd_text)
-            team_skill_counts = aggregate_team_skills(team_df)
-            score, matched, missing_detail = compute_skill_match(jd_skills, team_skill_counts)
-
-            st.markdown("### 📊 Results Dashboard")
-            
-            # Metrics
-            col_m1, col_m2, col_m3 = st.columns(3)
-            with col_m1:
-                st.metric(label="Match Score", value=f"{score}%", delta=f"{score-50}% vs baseline")
-            with col_m2:
-                st.metric(label="Matched Skills", value=len(matched))
-            with col_m3:
-                st.metric(label="Missing Skills", value=len(missing_detail))
-
-            # Details
-            col_d1, col_d2 = st.columns(2)
-            with col_d1:
-                st.markdown("**✅ Matched Skills**")
-                if matched:
-                    for skill in matched:
-                        st.markdown(f"- {skill}")
+# ---------------------------
+# PAGE: ACCOUNT
+# ---------------------------
+elif current_page == 'Account':
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-header">🔐 Account Management</h2>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🔓 Login")
+        user = st.text_input("Username", key="login_user", placeholder="Enter your username")
+        pwd = st.text_input("Password", type="password", key="login_pwd", placeholder="Enter your password")
+        if st.button("🔓 Login", key="login_btn", use_container_width=True):
+            if user == "admin" and pwd == "1234":
+                st.success("✅ Logged in successfully as admin!")
+                st.session_state['user'] = user
+                st.balloons()
+            else:
+                st.error("❌ Invalid credentials. Please try again.")
+    
+    with col2:
+        st.markdown("### ✨ Sign Up")
+        new_user = st.text_input("New Username", key="signup_user", placeholder="Choose a username")
+        new_pwd = st.text_input("New Password", type="password", key="signup_pwd", placeholder="Choose a password")
+        confirm_pwd = st.text_input("Confirm Password", type="password", key="confirm_pwd", placeholder="Confirm your password")
+        if st.button("✨ Create Account", key="signup_btn", use_container_width=True):
+            if new_user and new_pwd:
+                if new_pwd == confirm_pwd:
+                    st.success(f"✅ Account '{new_user}' created successfully!")
+                    st.session_state['user'] = new_user
+                    st.balloons()
                 else:
-                    st.write("None")
-            
-            with col_d2:
-                st.markdown("**⚠️ Missing / Low Coverage Skills**")
-                if missing_detail:
-                    st.table(pd.DataFrame(missing_detail))
-                else:
-                    st.write("None")
+                    st.error("❌ Passwords do not match!")
+            else:
+                st.error("❌ Please provide both username and password.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # User info section if logged in
+    if 'user' in st.session_state:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-header">👤 User Profile</h2>', unsafe_allow_html=True)
+        st.markdown(f"""
+        **Current User:** {st.session_state['user']}
+        
+        **Account Status:** Active ✅
+        
+        **Access Level:** Full Access
+        """)
+        
+        if st.button("🚪 Logout", key="logout_btn"):
+            del st.session_state['user']
+            st.success("Logged out successfully!")
+            st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
-            # Radar chart
-            st.markdown("### 📈 Skills Radar Visualization")
-            viz_skills = list(jd_skills)[:8]
-            team_size = max(1, sum(team_skill_counts.values()))
-            viz_values = [int(100 * team_skill_counts.get(s,0) / team_size) for s in viz_skills]
-            fig = radar_chart(viz_skills, viz_values)
-            if fig:
-                st.pyplot(fig)
+# ---------------------------
+# PAGE: UPLOAD & ANALYZE
+# ---------------------------
+elif current_page == 'Upload & Analyze':
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-header">📁 Upload Files</h2>', unsafe_allow_html=True)
+    
+    # Upload subsection
+    st.markdown("### 📤 Upload Your Data")
+    col_jd, col_team = st.columns(2)
+    
+    with col_jd:
+        st.markdown("**Job Description**")
+        jd_file = st.file_uploader("Upload JD (TXT/PDF)", type=['txt','pdf'], key="jd_uploader", label_visibility="collapsed")
+    
+    with col_team:
+        st.markdown("**Team Profiles**")
+        team_file = st.file_uploader("Upload Team Data (CSV/Excel)", type=['csv','xlsx','xls'], key="team_uploader", label_visibility="collapsed")
+    
+    jd_text = ""
+    
+    if jd_file:
+        if jd_file.type == "text/plain":
+            jd_text = jd_file.getvalue().decode("utf-8")
+        elif jd_file.type == "application/pdf":
+            reader = PdfReader(jd_file)
+            jd_text = "\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
+        st.text_area("📄 Job Description Preview (editable)", jd_text, height=200, key="jd_preview")
+        st.session_state['jd_text'] = jd_text
+    
+    team_df = None
+    if team_file:
+        try:
+            team_df = pd.read_csv(team_file) if team_file.name.endswith(".csv") else pd.read_excel(team_file)
+            st.markdown("### 👥 Team Profiles Preview")
+            st.dataframe(team_df.head(), use_container_width=True)
+            st.session_state['team_df'] = team_df
+        except Exception as e:
+            st.error(f"❌ Failed to read team file: {e}")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Analysis section
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="section-header">🔍 Run Analysis</h2>', unsafe_allow_html=True)
+    
+    if st.button("🚀 Analyze Skills Gap", key="analyze_btn", use_container_width=True):
+        # Get data from session state if not uploaded in current session
+        if not jd_text and 'jd_text' in st.session_state:
+            jd_text = st.session_state['jd_text']
+        if not jd_text:
+            st.warning("⚠️ Please provide a Job Description (upload or paste).")
+        elif team_df is None and 'team_df' not in st.session_state:
+            st.warning("⚠️ Please upload team profiles (CSV/Excel).")
+        else:
+            if 'team_df' in st.session_state and team_df is None:
+                team_df = st.session_state['team_df']
 
-            # AI Summary
-            st.markdown("### 🤖 AI-Powered Insights")
-            prompt = f"""
+            with st.spinner("🔄 Analyzing skills..."):
+                # Compute analysis
+                jd_skills = extract_skills_from_text(jd_text)
+                team_skill_counts = aggregate_team_skills(team_df)
+                score, matched, missing_detail = compute_skill_match(jd_skills, team_skill_counts)
+
+                st.markdown("### 📊 Results Dashboard")
+                
+                # Metrics
+                col_m1, col_m2, col_m3 = st.columns(3)
+                with col_m1:
+                    st.metric(label="Match Score", value=f"{score}%", delta=f"{score-50}% vs baseline")
+                with col_m2:
+                    st.metric(label="Matched Skills", value=len(matched))
+                with col_m3:
+                    st.metric(label="Missing Skills", value=len(missing_detail))
+
+                # Details
+                col_d1, col_d2 = st.columns(2)
+                with col_d1:
+                    st.markdown("**✅ Matched Skills**")
+                    if matched:
+                        for skill in matched:
+                            st.markdown(f"- {skill}")
+                    else:
+                        st.write("None")
+                
+                with col_d2:
+                    st.markdown("**⚠️ Missing / Low Coverage Skills**")
+                    if missing_detail:
+                        st.table(pd.DataFrame(missing_detail))
+                    else:
+                        st.write("None")
+
+                # Radar chart
+                st.markdown("### 📈 Skills Radar Visualization")
+                viz_skills = list(jd_skills)[:8]
+                team_size = max(1, sum(team_skill_counts.values()))
+                viz_values = [int(100 * team_skill_counts.get(s,0) / team_size) for s in viz_skills]
+                fig = radar_chart(viz_skills, viz_values)
+                if fig:
+                    st.pyplot(fig)
+
+                # AI Summary
+                st.markdown("### 🤖 AI-Powered Insights")
+                prompt = f"""
 Job Description skills: {', '.join(jd_skills)}
 Matched skills: {', '.join(matched)}
 Missing skills: {', '.join([m['skill'] for m in missing_detail])}
@@ -711,11 +891,11 @@ Provide a concise summary in bullet/point form (~200 words) focusing on:
 - recommended training/hiring actions
 - 6-month outlook
 """
-            with st.spinner("🤖 Generating AI summary..."):
-                summary = call_gemini(prompt, system_prompt="You are an expert HR AI. Output in bullet points, ~200 words.")
-            st.markdown(summary)
-
-st.markdown('</div>', unsafe_allow_html=True)
+                with st.spinner("🤖 Generating AI summary..."):
+                    summary = call_gemini(prompt, system_prompt="You are an expert HR AI. Output in bullet points, ~200 words.")
+                st.markdown(summary)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("</div>", unsafe_allow_html=True)
 
