@@ -21,6 +21,17 @@ st.set_page_config(page_title="AI Skills Radar", layout="wide")
 if 'current_page' not in st.session_state:
     st.session_state['current_page'] = 'Home'
 
+# Check for URL parameters to handle navigation
+query_params = st.query_params
+if 'page' in query_params:
+    page_param = query_params['page']
+    if page_param == 'Home':
+        st.session_state['current_page'] = 'Home'
+    elif page_param == 'Account':
+        st.session_state['current_page'] = 'Account'
+    elif page_param == 'Upload':
+        st.session_state['current_page'] = 'Upload & Analyze'
+
 # ---------------------------
 # Load Gemini API Key
 # ---------------------------
@@ -110,8 +121,10 @@ body {
     font-size: 15px;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
+    border: none;
     transition: all 0.3s ease;
     cursor: pointer;
+    font-family: 'Inter', sans-serif;
 }
 
 .nav-link:hover {
@@ -601,81 +614,13 @@ st.markdown(f"""
       <span class="nav-title">AI Skills Radar</span>
     </div>
   </div>
-  <ul class="nav-links">
-    <li><a class="nav-link {'active' if current_page == 'Home' else ''}" id="nav-home">🏠 Home</a></li>
-    <li><a class="nav-link {'active' if current_page == 'Account' else ''}" id="nav-account">🔐 Account</a></li>
-    <li><a class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" id="nav-upload">📁 Upload & Analyze</a></li>
-  </ul>
+  <div class="nav-links">
+    <button class="nav-link {'active' if current_page == 'Home' else ''}" onclick="window.location.href='?page=Home'">🏠 Home</button>
+    <button class="nav-link {'active' if current_page == 'Account' else ''}" onclick="window.location.href='?page=Account'">🔐 Account</button>
+    <button class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" onclick="window.location.href='?page=Upload'">📁 Upload & Analyze</button>
+  </div>
 </div>
 """, unsafe_allow_html=True)
-
-# JavaScript to handle navigation clicks
-st.markdown("""
-<script>
-(function() {
-    // Wait for DOM to be ready
-    setTimeout(function() {
-        const homeNav = document.getElementById('nav-home');
-        const accountNav = document.getElementById('nav-account');
-        const uploadNav = document.getElementById('nav-upload');
-        
-        if (homeNav) {
-            homeNav.addEventListener('click', function(e) {
-                e.preventDefault();
-                const buttons = window.parent.document.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    if (btn.innerText === 'home') {
-                        btn.click();
-                    }
-                });
-            });
-        }
-        
-        if (accountNav) {
-            accountNav.addEventListener('click', function(e) {
-                e.preventDefault();
-                const buttons = window.parent.document.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    if (btn.innerText === 'account') {
-                        btn.click();
-                    }
-                });
-            });
-        }
-        
-        if (uploadNav) {
-            uploadNav.addEventListener('click', function(e) {
-                e.preventDefault();
-                const buttons = window.parent.document.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    if (btn.innerText === 'upload') {
-                        btn.click();
-                    }
-                });
-            });
-        }
-    }, 500);
-})();
-</script>
-""", unsafe_allow_html=True)
-
-# Navigation buttons (hidden but functional) - Keep these for functionality
-if 'button_clicked' not in st.session_state:
-    st.session_state['button_clicked'] = False
-
-# Create a hidden container for navigation
-nav_container = st.container()
-with nav_container:
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("home", key="nav_home_btn", type="secondary"):
-            set_page('Home')
-    with col2:
-        if st.button("account", key="nav_account_btn", type="secondary"):
-            set_page('Account')
-    with col3:
-        if st.button("upload", key="nav_upload_btn", type="secondary"):
-            set_page('Upload & Analyze')
 
 # ---------------------------
 # Skill Extract & Analyzer Logic
