@@ -129,36 +129,33 @@ body {
     padding: 0 !important;
 }
 
-/* Hide Streamlit header and footer */
+/* Hide all Streamlit elements */
 header[data-testid="stHeader"] {
     display: none !important;
 }
 
-footer {
+.stApp > header {
     display: none !important;
 }
 
-.stApp {
-    margin-top: 0 !important;
-}
-
-div[data-testid="column"] > div > div > div > button {
+/* Hide navigation buttons completely */
+.element-container:has(button) {
     display: none !important;
 }
 
-/* Hide the entire row containing navigation buttons */
-div[data-testid="column"]:has(button[kind="secondary"]) {
+div[data-testid="column"] {
     display: none !important;
 }
 
 /* Main container */
 .main-container {
-    padding-top: 80px;
-    padding-bottom: 200px;
+    padding-top: 70px;
+    padding-bottom: 60px;
     max-width: 1400px;
     margin: 0 auto;
     padding-left: 40px;
     padding-right: 40px;
+    min-height: calc(100vh - 250px);
 }
 
 /* Section cards with modern design */
@@ -166,7 +163,7 @@ div[data-testid="column"]:has(button[kind="secondary"]) {
     background: white;
     border-radius: 20px;
     padding: 40px;
-    margin: 20px 0;
+    margin: 15px 0;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
     border: 1px solid rgba(0, 0, 0, 0.05);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -328,13 +325,13 @@ div[data-testid="column"]:has(button[kind="secondary"]) {
 .app-footer {
     background: #1a1a1a;
     color: #e0e0e0;
-    position: fixed;
+    position: relative;
     bottom: 0;
     left: 0;
     right: 0;
     padding: 30px 40px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 9998;
+    margin-top: 40px;
 }
 
 .footer-content {
@@ -343,6 +340,7 @@ div[data-testid="column"]:has(button[kind="secondary"]) {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
     gap: 40px;
+    text-align: left;
 }
 
 .footer-section h3 {
@@ -376,6 +374,16 @@ div[data-testid="column"]:has(button[kind="secondary"]) {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 13px;
     color: #888;
+}
+
+/* Auth form styling */
+.auth-form {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* Animations */
@@ -430,7 +438,7 @@ html {
     padding: 60px 40px;
     border-radius: 20px;
     text-align: center;
-    margin: 20px 0;
+    margin: 15px 0;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -613,17 +621,23 @@ document.getElementById('nav-upload').onclick = function() {
 </script>
 """, unsafe_allow_html=True)
 
-# Navigation buttons (hidden but functional)
-col_nav1, col_nav2, col_nav3 = st.columns(3)
-with col_nav1:
-    if st.button("nav_home", key="nav_home_btn", use_container_width=True):
-        set_page('Home')
-with col_nav2:
-    if st.button("nav_account", key="nav_account_btn", use_container_width=True):
-        set_page('Account')
-with col_nav3:
-    if st.button("nav_upload", key="nav_upload_btn", use_container_width=True):
-        set_page('Upload & Analyze')
+# Navigation buttons (hidden but functional) - Keep these for functionality
+if 'button_clicked' not in st.session_state:
+    st.session_state['button_clicked'] = False
+
+# Create a hidden container for navigation
+nav_container = st.container()
+with nav_container:
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("home", key="nav_home_btn", type="secondary"):
+            set_page('Home')
+    with col2:
+        if st.button("account", key="nav_account_btn", type="secondary"):
+            set_page('Account')
+    with col3:
+        if st.button("upload", key="nav_upload_btn", type="secondary"):
+            set_page('Upload & Analyze')
 
 # ---------------------------
 # Skill Extract & Analyzer Logic
@@ -761,64 +775,71 @@ if current_page == 'Home':
 # PAGE: ACCOUNT
 # ---------------------------
 elif current_page == 'Account':
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown('<h2 class="section-header">🔐 Account Management</h2>', unsafe_allow_html=True)
-    
     # Check if user is already logged in
     if 'user' in st.session_state:
         st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.markdown('<h2 class="section-header">👤 User Profile</h2>', unsafe_allow_html=True)
-        st.markdown(f"""
-        **Current User:** {st.session_state['user']}
         
-        **Account Status:** Active ✅
-        
-        **Access Level:** Full Access
-        """)
-        
-        if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
-            del st.session_state['user']
-            st.success("Logged out successfully!")
-            st.rerun()
+        # Centered profile info
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown(f"""
+            <div style="text-align: center; padding: 20px;">
+                <h3>Welcome, {st.session_state['user']}!</h3>
+                <p><strong>Account Status:</strong> Active ✅</p>
+                <p><strong>Access Level:</strong> Full Access</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
+                del st.session_state['user']
+                st.success("Logged out successfully!")
+                st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
     else:
-        # Single form with tabs for Login/Signup
-        tab1, tab2 = st.tabs(["🔓 Login", "✨ Sign Up"])
-        
-        with tab1:
-            st.markdown("### Welcome Back!")
-            user = st.text_input("Username", key="login_user", placeholder="Enter your username")
-            pwd = st.text_input("Password", type="password", key="login_pwd", placeholder="Enter your password")
-            if st.button("🔓 Login", key="login_btn", use_container_width=True):
-                if user == "admin" and pwd == "1234":
-                    st.success("✅ Logged in successfully as admin!")
-                    st.session_state['user'] = user
-                    st.balloons()
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.error("❌ Invalid credentials. Please try again.")
-        
-        with tab2:
-            st.markdown("### Create New Account")
-            new_user = st.text_input("Username", key="signup_user", placeholder="Choose a username")
-            new_pwd = st.text_input("Password", type="password", key="signup_pwd", placeholder="Choose a password")
-            confirm_pwd = st.text_input("Confirm Password", type="password", key="confirm_pwd", placeholder="Confirm your password")
-            if st.button("✨ Create Account", key="signup_btn", use_container_width=True):
-                if new_user and new_pwd:
-                    if new_pwd == confirm_pwd:
-                        st.success(f"✅ Account '{new_user}' created successfully!")
-                        st.session_state['user'] = new_user
+        # Centered auth form
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown('<div class="section-card auth-form">', unsafe_allow_html=True)
+            st.markdown('<h2 class="section-header" style="text-align: center;">🔐 Account</h2>', unsafe_allow_html=True)
+            
+            # Single form with tabs for Login/Signup
+            tab1, tab2 = st.tabs(["🔓 Login", "✨ Sign Up"])
+            
+            with tab1:
+                st.markdown("### Welcome Back!")
+                user = st.text_input("Username", key="login_user", placeholder="Enter your username")
+                pwd = st.text_input("Password", type="password", key="login_pwd", placeholder="Enter your password")
+                if st.button("🔓 Login", key="login_btn", use_container_width=True):
+                    if user == "admin" and pwd == "1234":
+                        st.success("✅ Logged in successfully!")
+                        st.session_state['user'] = user
                         st.balloons()
                         time.sleep(1)
                         st.rerun()
                     else:
-                        st.error("❌ Passwords do not match!")
-                else:
-                    st.error("❌ Please provide both username and password.")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+                        st.error("❌ Invalid credentials. Please try again.")
+            
+            with tab2:
+                st.markdown("### Create New Account")
+                new_user = st.text_input("Username", key="signup_user", placeholder="Choose a username")
+                new_pwd = st.text_input("Password", type="password", key="signup_pwd", placeholder="Choose a password")
+                confirm_pwd = st.text_input("Confirm Password", type="password", key="confirm_pwd", placeholder="Confirm your password")
+                if st.button("✨ Create Account", key="signup_btn", use_container_width=True):
+                    if new_user and new_pwd:
+                        if new_pwd == confirm_pwd:
+                            st.success(f"✅ Account '{new_user}' created successfully!")
+                            st.session_state['user'] = new_user
+                            st.balloons()
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("❌ Passwords do not match!")
+                    else:
+                        st.error("❌ Please provide both username and password.")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # PAGE: UPLOAD & ANALYZE
