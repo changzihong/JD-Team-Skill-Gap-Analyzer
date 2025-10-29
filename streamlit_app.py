@@ -21,17 +21,6 @@ st.set_page_config(page_title="AI Skills Radar", layout="wide")
 if 'current_page' not in st.session_state:
     st.session_state['current_page'] = 'Home'
 
-# Check for URL parameters to handle navigation
-query_params = st.query_params
-if 'page' in query_params:
-    page_param = query_params['page']
-    if page_param == 'Home':
-        st.session_state['current_page'] = 'Home'
-    elif page_param == 'Account':
-        st.session_state['current_page'] = 'Account'
-    elif page_param == 'Upload':
-        st.session_state['current_page'] = 'Upload & Analyze'
-
 # ---------------------------
 # Load Gemini API Key
 # ---------------------------
@@ -63,106 +52,22 @@ body {
     overflow-x: hidden;
 }
 
-/* Fixed top navbar */
-.top-navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 9999;
-    background-color: #1a1a1a;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-
-.nav-left {
-    display: flex;
-    align-items: center;
-    padding: 16px 40px;
-}
-
-.nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.nav-logo {
-    font-size: 24px;
-}
-
-.nav-title {
-    font-weight: 700;
-    font-size: 18px;
-    color: white;
-    letter-spacing: 0.5px;
-}
-
-.nav-links {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-right: 40px;
-}
-
-.nav-link {
-    display: block;
-    color: white;
-    padding: 10px 24px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 15px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    border: none;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-}
-
-.nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-}
-
-.nav-link.active {
-    background-color: rgba(255, 255, 255, 0.25);
-}
-
-/* Hide Streamlit default elements and navigation buttons */
-.stElementContainer, .stMarkdown {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Hide all Streamlit elements */
+/* Hide default Streamlit header */
 header[data-testid="stHeader"] {
     display: none !important;
 }
 
-.stApp > header {
-    display: none !important;
+#MainMenu {
+    visibility: hidden;
 }
 
-/* Hide navigation buttons completely */
-.element-container:has(button) {
-    display: none !important;
-}
-
-div[data-testid="column"] {
-    display: none !important;
+footer {
+    visibility: hidden;
 }
 
 /* Main container */
 .main-container {
-    padding-top: 70px;
+    padding-top: 20px;
     padding-bottom: 60px;
     max-width: 1400px;
     margin: 0 auto;
@@ -273,6 +178,23 @@ div[data-testid="column"] {
     transform: translateY(-1px) !important;
 }
 
+/* Navigation bar styling */
+.nav-container {
+    background: #1a1a1a;
+    padding: 16px 0;
+    margin: -20px -40px 20px -40px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.nav-header {
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+
 /* Input fields */
 .stTextInput>div>div>input,
 .stTextArea>div>div>textarea {
@@ -338,15 +260,10 @@ div[data-testid="column"] {
 .app-footer {
     background: #1a1a1a;
     color: #e0e0e0;
-    position: relative;
-    bottom: 0;
-    left: 0;
     width: 100%;
     padding: 30px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin-top: 40px;
-    margin-left: 0;
-    margin-right: 0;
 }
 
 .footer-content {
@@ -396,10 +313,6 @@ div[data-testid="column"] {
 .auth-form {
     max-width: 500px;
     margin: 0 auto;
-    background: white;
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* Animations */
@@ -513,33 +426,9 @@ html {
 
 /* Responsive design */
 @media (max-width: 768px) {
-    .top-navbar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .nav-left {
-        width: 100%;
-        padding: 12px 20px;
-    }
-    
-    .nav-links {
-        width: 100%;
-        flex-direction: column;
-        padding: 0 20px 12px 20px;
-        gap: 8px;
-    }
-    
-    .nav-link {
-        width: 100%;
-        padding: 12px 20px;
-        text-align: center;
-    }
-    
     .main-container {
         padding-left: 20px;
         padding-right: 20px;
-        padding-top: 160px;
     }
     
     .section-card {
@@ -563,10 +452,6 @@ html {
         grid-template-columns: 1fr;
         gap: 24px;
     }
-    
-    .app-footer {
-        padding: 20px;
-    }
 }
 
 /* Scrollbar styling */
@@ -587,11 +472,6 @@ html {
     background: #333;
 }
 </style>
-
-<script>
-/* Navbar scroll effect - removed since we want solid black */
-/* Removed scroll effect to keep navbar consistently black */
-</script>
 """, unsafe_allow_html=True)
 
 # ---------------------------
@@ -600,27 +480,6 @@ html {
 def set_page(page_name):
     st.session_state['current_page'] = page_name
     st.rerun()
-
-# ---------------------------
-# Render Navigation Bar
-# ---------------------------
-current_page = st.session_state['current_page']
-
-st.markdown(f"""
-<div class="top-navbar">
-  <div class="nav-left">
-    <div class="nav-brand">
-      <span class="nav-logo">📊</span>
-      <span class="nav-title">AI Skills Radar</span>
-    </div>
-  </div>
-  <div class="nav-links">
-    <button class="nav-link {'active' if current_page == 'Home' else ''}" onclick="window.location.href='?page=Home'">🏠 Home</button>
-    <button class="nav-link {'active' if current_page == 'Account' else ''}" onclick="window.location.href='?page=Account'">🔐 Account</button>
-    <button class="nav-link {'active' if current_page == 'Upload & Analyze' else ''}" onclick="window.location.href='?page=Upload'">📁 Upload & Analyze</button>
-  </div>
-</div>
-""", unsafe_allow_html=True)
 
 # ---------------------------
 # Skill Extract & Analyzer Logic
@@ -694,7 +553,32 @@ def call_gemini(prompt, system_prompt="You are an AI HR analyst generating conci
 # ---------------------------
 # Main Content Container
 # ---------------------------
-#st.markdown('<div class="main-container">', unsafe_allow_html=True)
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
+
+# ---------------------------
+# Render Navigation Bar (Functional)
+# ---------------------------
+current_page = st.session_state['current_page']
+
+st.markdown('<div class="nav-container">', unsafe_allow_html=True)
+st.markdown('<div class="nav-header">📊 AI Skills Radar</div>', unsafe_allow_html=True)
+
+nav_col1, nav_col2, nav_col3 = st.columns(3)
+
+with nav_col1:
+    if st.button("🏠 Home", key="nav_home", use_container_width=True, type="primary" if current_page == 'Home' else "secondary"):
+        set_page('Home')
+
+with nav_col2:
+    if st.button("🔐 Account", key="nav_account", use_container_width=True, type="primary" if current_page == 'Account' else "secondary"):
+        set_page('Account')
+
+with nav_col3:
+    if st.button("📁 Upload & Analyze", key="nav_upload", use_container_width=True, type="primary" if current_page == 'Upload & Analyze' else "secondary"):
+        set_page('Upload & Analyze')
+
+st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("---")
 
 # ---------------------------
 # PAGE: HOME
@@ -732,7 +616,7 @@ if current_page == 'Home':
     </div>
     """, unsafe_allow_html=True)
     
-    #st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown('<h2 class="section-header">🚀 Getting Started</h2>', unsafe_allow_html=True)
     st.markdown("""
     ### How to use AI Skills Radar:
@@ -752,7 +636,7 @@ if current_page == 'Home':
     - 🤖 **AI-Powered** - Smart recommendations for workforce development
     - 💼 **HR-Focused** - Built specifically for HR and L&D professionals
     """)
-    #st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # PAGE: ACCOUNT
@@ -947,7 +831,7 @@ Provide a concise summary in bullet/point form (~200 words) focusing on:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # ---------------------------
-# Footer (moved outside main container for full width)
+# Footer
 # ---------------------------
 st.markdown("""
 <div class="app-footer">
