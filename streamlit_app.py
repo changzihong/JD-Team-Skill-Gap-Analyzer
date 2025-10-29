@@ -1,11 +1,10 @@
 import os
 import streamlit as st
 import pandas as pd
+import numpy as np
 import re
 import matplotlib.pyplot as plt
-import numpy as np
 import requests
-from io import StringIO
 from PyPDF2 import PdfReader
 
 # -----------------------------------------------------------------------------
@@ -14,24 +13,27 @@ from PyPDF2 import PdfReader
 st.set_page_config(page_title="AI Skills Radar", layout="wide")
 
 # -----------------------------------------------------------------------------
-# CUSTOM CSS + JS
+# CUSTOM CSS
 # -----------------------------------------------------------------------------
 st.markdown("""
     <style>
-    /* Main theme */
     body {
         background-color: #f9f9ff;
-        color: #333;
         font-family: 'Poppins', sans-serif;
     }
     .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
         background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
         padding: 0.8rem 2rem;
-        border-radius: 0 0 12px 12px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: white;
+        border-radius: 0 0 10px 10px;
     }
     .navbar a {
         color: white;
@@ -43,12 +45,20 @@ st.markdown("""
         text-decoration: underline;
     }
     .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         background-color: #f1f1f1;
-        padding: 1rem;
         text-align: center;
+        padding: 0.8rem;
         color: #555;
-        margin-top: 3rem;
         border-top: 1px solid #ddd;
+        font-size: 14px;
+    }
+    .main {
+        margin-top: 80px;
+        margin-bottom: 60px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -61,7 +71,7 @@ MODEL_NAME = "gemini-2.0-flash"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
 if not GEMINI_API_KEY:
-    st.error("⚠️ Gemini API key not configured. Please add to Streamlit secrets.")
+    st.error("⚠️ Gemini API key not configured. Please set it in Streamlit secrets.")
     st.stop()
 
 # -----------------------------------------------------------------------------
@@ -75,26 +85,18 @@ COMMON_SKILLS = [
 
 def extract_skills_from_text(text, skill_list=COMMON_SKILLS):
     text_lower = text.lower()
-    found = set()
-    for s in skill_list:
-        if re.search(r'\b' + re.escape(s) + r'\b', text_lower):
-            found.add(s)
+    found = {s for s in skill_list if re.search(r'\\b' + re.escape(s) + r'\\b', text_lower)}
     if not found:
         tokens = re.findall(r"[a-zA-Z]{4,}", text_lower)
         found = set(tokens[:8])
     return sorted(found)
 
-def aggregate_team_skills(df_profiles):
+def aggregate_team_skills(df):
     counts = {}
-    if 'skills' in df_profiles.columns:
-        for row in df_profiles['skills'].dropna():
-            for s in [x.strip().lower() for x in re.split('[,;|/\\\\n]', str(row)) if x.strip()]:
-                counts[s] = counts.get(s, 0) + 1
-    else:
-        for _, r in df_profiles.iterrows():
-            combined = ' '.join([str(x) for x in r.values if pd.notna(x)])
-            for s in extract_skills_from_text(combined):
-                counts[s] = counts.get(s, 0) + 1
+    for _, r in df.iterrows():
+        combined = ' '.join([str(x) for x in r.values if pd.notna(x)])
+        for s in extract_skills_from_text(combined):
+            counts[s] = counts.get(s, 0) + 1
     return counts
 
 def compute_skill_match(jd_skills, team_skill_counts):
@@ -107,22 +109,19 @@ def compute_skill_match(jd_skills, team_skill_counts):
     return score, sorted(matched), missing_detail
 
 def radar_chart(skills, values, title='Team Skills Radar'):
-    labels = skills
-    stats = values
-    N = len(labels)
+    N = len(skills)
     angles = np.linspace(0, 2*np.pi, N, endpoint=False).tolist()
-    stats = list(stats)
-    stats += stats[:1]
+    stats = values + values[:1]
     angles += angles[:1]
     fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
     ax.plot(angles, stats, linewidth=2)
     ax.fill(angles, stats, alpha=0.25)
-    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
+    ax.set_thetagrids(np.degrees(angles[:-1]), skills)
     ax.set_ylim(0,100)
     ax.set_title(title)
     return fig
 
-def call_gemini_api(prompt, max_output_tokens=512, temperature=0.2):
+def call_gemini_api(prompt, max_output_tokens=512, temperature=0.3):
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY,
@@ -136,38 +135,41 @@ def call_gemini_api(prompt, max_output_tokens=512, temperature=0.2):
         data = resp.json()
         return data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
-        st.error(f"❌ Error calling Gemini API: {e}")
-        st.write("Raw:", resp.text)
+        st.error(f"❌ Gemini API error: {e}")
         return ""
 
 # -----------------------------------------------------------------------------
-# NAVIGATION BAR
+# NAVBAR (STATIC)
 # -----------------------------------------------------------------------------
 st.markdown("""
 <div class="navbar">
   <div style="font-weight:600;font-size:18px;">🤖 AI Skills Radar</div>
   <div>
-    <a href="?page=home">Home</a>
-    <a href="?page=dashboard">Dashboard</a>
-    <a href="?page=upload">Upload</a>
-    <a href="?page=login">Login</a>
-    <a href="?page=signup">Signup</a>
-    <a href="?page=about">About</a>
+    <a href="#" id="home-link">Home</a>
+    <a href="#" id="upload-link">Upload</a>
+    <a href="#" id="dashboard-link">Dashboard</a>
+    <a href="#" id="login-link">Login</a>
+    <a href="#" id="signup-link">Signup</a>
+    <a href="#" id="about-link">About</a>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# PAGE LOGIC
+# MAIN CONTENT (SINGLE PAGE)
 # -----------------------------------------------------------------------------
-query_params = st.query_params
-page = query_params.get("page", ["home"])[0]
+if "page" not in st.session_state:
+    st.session_state["page"] = "home"
 
-if page == "home":
+st.markdown('<div class="main">', unsafe_allow_html=True)
+
+nav_option = st.radio("", ["Home", "Upload", "Dashboard", "Login", "Signup", "About"], horizontal=True, label_visibility="collapsed")
+
+if nav_option == "Home":
     st.title("Welcome to AI Skills Radar")
-    st.write("Your one-stop AI solution to analyze team readiness and close skill gaps for future growth.")
+    st.write("Your AI-powered solution to identify skill gaps and team readiness.")
 
-elif page == "login":
+elif nav_option == "Login":
     st.header("🔐 Login")
     with st.form("login_form"):
         username = st.text_input("Username")
@@ -179,10 +181,10 @@ elif page == "login":
             else:
                 st.error("Invalid credentials")
 
-elif page == "signup":
+elif nav_option == "Signup":
     st.header("🆕 Signup")
     with st.form("signup_form"):
-        username = st.text_input("Choose a username")
+        username = st.text_input("Username")
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
         confirm = st.text_input("Confirm Password", type="password")
@@ -193,32 +195,32 @@ elif page == "signup":
             else:
                 st.error("Passwords do not match.")
 
-elif page == "upload":
+elif nav_option == "Upload":
     st.header("📁 Upload Job Description & Team Profiles")
     jd_file = st.file_uploader('Upload JD (TXT/PDF)', type=['txt','pdf'])
     jd_text = st.text_area('Or paste JD text here', height=160)
     team_file = st.file_uploader('Upload Team Profiles (CSV/Excel)', type=['csv','xlsx','xls'])
 
     if st.button("Analyze Skills"):
-        if jd_file is not None:
+        if jd_file:
             if jd_file.type == 'text/plain':
                 jd_text = jd_file.getvalue().decode('utf-8')
             elif jd_file.type == 'application/pdf':
                 reader = PdfReader(jd_file)
                 jd_text = "\n".join([page.extract_text() for page in reader.pages])
-        if team_file is not None:
+        if team_file:
             team_df = pd.read_csv(team_file) if team_file.name.endswith('.csv') else pd.read_excel(team_file)
             st.session_state['team_df'] = team_df
             st.session_state['jd_text'] = jd_text
-            st.success("✅ Uploaded successfully! Go to Dashboard.")
+            st.success("✅ Uploaded successfully! Go to Dashboard to view results.")
 
-elif page == "dashboard":
-    st.header("📊 Skill Gap Dashboard")
+elif nav_option == "Dashboard":
+    st.header("📊 AI Skill Gap Dashboard")
     jd_text = st.session_state.get('jd_text')
     team_df = st.session_state.get('team_df')
 
     if not jd_text or team_df is None:
-        st.warning("Please upload data first from the Upload page.")
+        st.warning("Please upload data first from the Upload section.")
     else:
         jd_skills = extract_skills_from_text(jd_text)
         team_skill_counts = aggregate_team_skills(team_df)
@@ -233,24 +235,26 @@ elif page == "dashboard":
         fig = radar_chart(viz_skills, viz_values)
         st.pyplot(fig)
 
-        prompt = f"Analyze missing skills: {missing_detail}. Suggest team development plan."
+        prompt = f"Analyze missing skills: {missing_detail}. Suggest improvement plan."
         insights = call_gemini_api(prompt)
         if insights:
-            st.subheader("Gemini Insights")
+            st.subheader("Gemini AI Insights")
             st.write(insights)
 
-elif page == "about":
-    st.header("About This Application")
+elif nav_option == "About":
+    st.header("ℹ️ About")
     st.write("""
-        AI Skills Radar is an intelligent workforce analyzer that helps HR, L&D, and management teams 
-        identify skill gaps, plan training, and prepare for future business goals.
+        **AI Skills Radar** helps HR, L&D, and management teams assess capability gaps, 
+        visualize skill readiness, and get AI-powered insights for upskilling plans.
     """)
 
+st.markdown('</div>', unsafe_allow_html=True)
+
 # -----------------------------------------------------------------------------
-# FOOTER
+# FOOTER (ALWAYS FIXED)
 # -----------------------------------------------------------------------------
 st.markdown("""
 <div class="footer">
-    © 2025 AI Skills Radar | Designed by HR Tech Builders | Contact: support@aiskillsradar.com
+    © 2025 AI Skills Radar | Built with ❤️ for HR Tech | support@aiskillsradar.com
 </div>
 """, unsafe_allow_html=True)
