@@ -732,7 +732,7 @@ if current_page == 'Home':
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    #st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown('<h2 class="section-header">🚀 Getting Started</h2>', unsafe_allow_html=True)
     st.markdown("""
     ### How to use AI Skills Radar:
